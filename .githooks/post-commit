@@ -1,0 +1,17 @@
+#!/bin/sh
+# Rewrite the new commit's local UTC offsets to +0000, keeping its timestamps.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+git_dir="$(git rev-parse --git-dir)"
+# The sequencer owns HEAD during rebase/cherry-pick/revert; `check --history`
+# still rejects any local offsets those commits carry.
+for state in rebase-merge rebase-apply sequencer CHERRY_PICK_HEAD REVERT_HEAD; do
+    test ! -e "$git_dir/$state" || exit 0
+done
+zones="$(git cat-file commit HEAD | sed -nE '/^$/q; s/^(author|committer) .* ([+-][0-9]{4})$/\2/p' | tr '\n' ' ')"
+test "$zones" != "+0000 +0000 " || exit 0
+author="$(git log -1 --format=%at)"
+committer="$(git log -1 --format=%ct)"
+# The amended commit is already UTC, so this hook's second run exits above.
+TZ=UTC GIT_COMMITTER_DATE="@$committer +0000" git commit --quiet --amend --no-edit \
+    --no-verify --allow-empty --allow-empty-message --cleanup=verbatim --date="@$author +0000"

@@ -43,7 +43,7 @@ idempotent changes in ignored SwiftPM checkouts. No upstream repository is chang
   transcription overload and `AsrModels.loadLocal`; convenience cache/load APIs
   may download and are deliberately not called.
 - KeyboardShortcuts: omit file-suffix Xcode `#Preview` declarations and replace
-  `@Entry` with its ordinary `EnvironmentKey` equivalent. Those macro plugins do
+  `@Entry` with its ordinary `EnvironmentKey` equivalent. Those macro plugins
   are not required for Command Line Tools builds. Global registered shortcuts
   still use the upstream Carbon implementation, without Input Monitoring.
 - Resolve SwiftPM resource bundles inside `Contents/Resources` for a signed Mac

@@ -18,7 +18,7 @@ public struct ModelDescriptor: Codable, Identifiable, Sendable, Equatable {
     public let revision: String
     public let files: [ModelAsset]
     public var size: Int64 { files.reduce(0) { $0 + $1.bytes } }
-    public var engineVersion: String { engine == "whisper" ? "1.1.0+dctt-offline" : "0.16.1+dctt-private" }
+    public var engineVersion: String { engine == "whisper" ? "1.1.0+dctt-offline" : "0.16.1+dctt-patched" }
     public static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
     public static let catalog: [Self] = {
         let resources = Bundle.main.resourceURL.flatMap { Bundle(url: $0.appendingPathComponent("dctt_DcttCore.bundle")) } ?? Bundle.module

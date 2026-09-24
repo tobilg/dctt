@@ -39,7 +39,8 @@ class PrivacyTests(unittest.TestCase):
         self.write(".githooks/pre-commit", '#!/bin/sh\nexec python3 scripts/public-source.py check --staged\n')
         (self.root / ".githooks/pre-commit").chmod(0o755)
         self.write(".public-source.json", json.dumps({
-            "files": [".gitignore", ".public-source.json", ".githooks/pre-commit", "README.md"],
+            "files": [".gitignore", ".public-source.json", ".githooks/pre-commit", ".githooks/post-commit",
+                      "README.md"],
             "trees": {"scripts": [".py"], "Sources": [".swift"], "docs/licenses": [".txt"]},
             "required": ["README.md", ".public-source.json"],
         }))
@@ -110,6 +111,7 @@ class PrivacyTests(unittest.TestCase):
         self.assertTrue(public.inspect_identity(f"{HANDLE} <{PRIVATE_EMAIL}> 1000 +0000"))
         self.assertTrue(public.inspect_identity(f"Private Name <{SAFE_EMAIL}> 1000 +0000"))
         self.assertTrue(public.inspect_identity(f"{HANDLE} <{SAFE_EMAIL}> 1000 +0100"))
+        self.assertFalse(public.inspect_identity(f"{HANDLE} <{SAFE_EMAIL}> 1000 +0100", require_utc=False))
 
     def test_export_has_only_fresh_history_and_never_overwrites(self):
         self.write("README.md", PRIVATE_EMAIL)
@@ -144,6 +146,20 @@ class PrivacyTests(unittest.TestCase):
         self.assertNotEqual(run.returncode, 0)
         self.assertIn("personal email", run.stdout)
         self.assertNotIn(PRIVATE_EMAIL, run.stdout + run.stderr)
+
+    def test_hooks_accept_local_timezone_and_record_utc(self):
+        for hook in ("pre-commit", "post-commit"):
+            shutil.copyfile(SCRIPT.parents[1] / ".githooks" / hook, self.root / ".githooks" / hook)
+            (self.root / ".githooks" / hook).chmod(0o755)
+        env = {k: v for k, v in self.env.items() if not k.endswith("_DATE")}
+        env["TZ"] = "Europe/Berlin"
+        self.git("add", "--all", env=env)
+        self.git("-c", "core.hooksPath=.githooks", "commit", "--quiet", "-m", "Local time", env=env)
+        headers = self.git("cat-file", "commit", "HEAD").split(b"\n\n")[0].decode().splitlines()
+        zones = [line.rsplit(" ", 1)[1] for line in headers if line.startswith(("author ", "committer "))]
+        self.assertEqual(zones, ["+0000", "+0000"])
+        self.assertEqual(self.git("log", "-1", "--format=%s").strip(), b"Local time")
+        self.assertFalse(public.inspect_history(self.root))
 
     def test_gitignore_covers_local_credentials_recordings_and_reports(self):
         shutil.copyfile(SCRIPT.parents[1] / ".gitignore", self.root / ".gitignore")

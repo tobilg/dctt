@@ -77,7 +77,7 @@ def inspect_bytes(path, data):
     return issues
 
 
-def inspect_identity(line):
+def inspect_identity(line, require_utc=True):
     match = re.fullmatch(r"(?:author |committer )?(.+) <([^>]+)> [0-9]+ ([+-][0-9]{4})", line)
     if not match:
         return ["unrecognized Git identity metadata"]
@@ -86,7 +86,7 @@ def inspect_identity(line):
     issues = []
     if not ((account and name == account.group(1)) or (name == "GitHub" and email == "noreply@github.com")):
         issues.append("use a public GitHub handle and its noreply email for author and committer")
-    if zone != "+0000":
+    if require_utc and zone != "+0000":
         issues.append("local timezone in commit metadata; run commits with TZ=UTC")
     return issues
 
@@ -150,8 +150,9 @@ def inspect_staged(root):
     names = {path for path, _, _ in entries}
     issues = [f"{p}: required staged file is missing" for p in manifest["required"] if p not in names]
     issues.extend(inspect_tree(root, entries, manifest, set()))
+    # The post-commit hook rewrites local offsets to +0000; history checks enforce it.
     for identity in ("GIT_AUTHOR_IDENT", "GIT_COMMITTER_IDENT"):
-        issues.extend(inspect_identity(git(root, "var", identity).decode().strip()))
+        issues.extend(inspect_identity(git(root, "var", identity).decode().strip(), require_utc=False))
     return issues
 
 

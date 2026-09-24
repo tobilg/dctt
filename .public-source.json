@@ -1,6 +1,6 @@
 {
   "files": [
-    ".gitignore", ".public-source.json", ".githooks/pre-commit",
+    ".gitignore", ".public-source.json", ".githooks/pre-commit", ".githooks/post-commit",
     "LICENSE", "README.md", "Package.swift", "Package.resolved",
     "Sources/DcttCore/Resources/models.json",
     "docs/DEPENDENCIES.md", "docs/VALIDATION.md", "docs/PUBLISHING.md"
@@ -13,7 +13,7 @@
     "docs/licenses": [".txt", ".md"]
   },
   "required": [
-    ".gitignore", ".public-source.json", ".githooks/pre-commit",
+    ".gitignore", ".public-source.json", ".githooks/pre-commit", ".githooks/post-commit",
     "LICENSE", "README.md", "Package.swift", "Package.resolved",
     "Sources/DcttApp/App.swift", "Sources/DcttCore/Resources/models.json",
     "packaging/Info.plist", "packaging/dctt.entitlements",

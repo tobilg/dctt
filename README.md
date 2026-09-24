@@ -252,9 +252,10 @@ editors fall back to Copy; other apps use their available Accessibility identiti
 Password fields and Secure Keyboard Entry are unsupported. Moving the caret
 within the same field changes the insertion point.
 
-Terminal and iTerm2 receive literal single-line text with embedded newlines and
-control characters removed or replaced. dctt never presses Enter or executes
-recognized text. Review dictated commands before submitting them yourself.
+Terminal, iTerm2, and Ghostty receive literal single-line text with embedded
+newlines and control characters removed or replaced. dctt never presses Enter
+or executes recognized text. Review dictated commands before submitting them
+yourself.
 
 Conservative cleanup preserves wording, punctuation, case, and numbers. Optional
 single-line mode also applies to ordinary editors. Clipboard restoration is off
