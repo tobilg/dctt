@@ -7,7 +7,9 @@ import plistlib
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "public-source.py"
@@ -17,6 +19,7 @@ spec.loader.exec_module(public)
 HANDLE = "example-contributor"
 SAFE_EMAIL = HANDLE + "@users.noreply.github.com"
 PRIVATE_EMAIL = "private-person" + "@" + "personal.invalid"
+FIXTURE_DATE = "2000-01-01T00:00:00Z"
 
 
 class PrivacyTests(unittest.TestCase):
@@ -30,7 +33,7 @@ class PrivacyTests(unittest.TestCase):
         self.env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
                         GIT_AUTHOR_NAME=HANDLE, GIT_AUTHOR_EMAIL=SAFE_EMAIL,
                         GIT_COMMITTER_NAME=HANDLE, GIT_COMMITTER_EMAIL=SAFE_EMAIL,
-                        GIT_AUTHOR_DATE=public.EXPORT_DATE, GIT_COMMITTER_DATE=public.EXPORT_DATE,
+                        GIT_AUTHOR_DATE=FIXTURE_DATE, GIT_COMMITTER_DATE=FIXTURE_DATE,
                         TZ="UTC")
         self.git("init", "--quiet", "--initial-branch=main", "--template=")
         self.write(".gitignore", ".private/\ndist/\nreports/\n")
@@ -123,7 +126,15 @@ class PrivacyTests(unittest.TestCase):
         self.write("dist/local-output.txt", "Private build output")
         before = self.git("rev-parse", "HEAD")
         target = self.base / "public"
-        public.export_source(self.root, target, HANDLE, SAFE_EMAIL)
+        started = int(time.time())
+        with patch.dict(os.environ, GIT_AUTHOR_DATE=FIXTURE_DATE, GIT_COMMITTER_DATE=FIXTURE_DATE,
+                        TZ="Europe/Berlin"):
+            public.export_source(self.root, target, HANDLE, SAFE_EMAIL)
+        finished = int(time.time())
+        dates = public.git(target, "log", "-1", "--format=%at%n%ct%n%ai%n%ci").decode().splitlines()
+        self.assertTrue(started <= int(dates[0]) <= finished)
+        self.assertEqual(dates[0], dates[1])
+        self.assertTrue(all(date.endswith("+0000") for date in dates[2:]))
         self.assertEqual(public.git(target, "rev-list", "--count", "--all").strip(), b"1")
         self.assertFalse(public.git(target, "remote").strip())
         self.assertFalse(public.git(target, "tag").strip())

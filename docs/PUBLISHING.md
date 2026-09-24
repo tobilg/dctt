@@ -39,11 +39,11 @@ python3 scripts/public-source.py export \
 ```
 
 The destination must not exist. The exporter copies only checked source files,
-creates one initial commit, sets a synthetic UTC commit date, and verifies the
+creates one initial commit, uses the current export time in UTC, and verifies the
 new history. It does not copy the old Git directory, remotes, hooks, tags, Git
 configuration, logs, archives or build outputs. It does not push or change remote
-visibility. Author and committer use the supplied public identity. The synthetic
-date is export metadata, not a claim about when development occurred.
+visibility. Author and committer use the supplied public identity and the export
+time; private development dates and the machine's local timezone are not reused.
 
 Check the export itself before using it:
 

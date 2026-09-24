@@ -5,6 +5,7 @@ Only standard-library modules are used. Findings contain paths/rules, never the
 matched credential or personal value. This is a guardrail, not a complete audit.
 """
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -16,7 +17,6 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BYTES = 2_000_000
-EXPORT_DATE = "2000-01-01T00:00:00Z"  # Synthetic date; never reuse private commit dates.
 EMAIL = re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 NOREPLY = re.compile(r"(?:[0-9]+\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com")
 PATTERNS = {
@@ -201,10 +201,11 @@ def export_source(root, output, author, email):
             destination.chmod(0o755 if source.stat().st_mode & 0o111 else 0o644)
         # Discard inherited Git configuration, identities, dates, hooks and remotes.
         env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+        export_date = datetime.now(timezone.utc).isoformat(timespec="seconds")
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
                    GIT_AUTHOR_NAME=author, GIT_AUTHOR_EMAIL=email,
                    GIT_COMMITTER_NAME=author, GIT_COMMITTER_EMAIL=email,
-                   GIT_AUTHOR_DATE=EXPORT_DATE, GIT_COMMITTER_DATE=EXPORT_DATE, TZ="UTC")
+                   GIT_AUTHOR_DATE=export_date, GIT_COMMITTER_DATE=export_date, TZ="UTC")
         git(staging, "init", "--quiet", "--initial-branch=main", "--template=", env=env)
         git(staging, "config", "user.name", author, env=env)
         git(staging, "config", "user.email", email, env=env)
